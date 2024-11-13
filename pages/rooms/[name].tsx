@@ -21,7 +21,7 @@ import {
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import * as React from 'react';
 import { DebugMode } from '../../lib/Debug';
 import { decodePassphrase, useServerUrl } from '../../lib/client-utils';
@@ -52,6 +52,7 @@ const Home: NextPage = () => {
   }, []);
 
   const onLeave = React.useCallback(() => router.push('/'), []);
+
 
   return (
     <>
@@ -89,9 +90,9 @@ type ActiveRoomProps = {
   region?: string;
   onLeave?: () => void;
 };
-
 const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
-  const [isRecording, setIsRecording] = useState(false); // State to track recording status
+
+  const [isRecording, setIsRecording] = useState(false);
 
   const tokenOptions = React.useMemo(() => {
     return {
@@ -101,7 +102,6 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       },
     };
   }, [userChoices.username]);
-
   const token = useToken(process.env.NEXT_PUBLIC_LK_TOKEN_ENDPOINT, roomName, tokenOptions);
 
   const router = useRouter();
@@ -169,47 +169,35 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       }
     });
   }
-  
   const connectOptions = React.useMemo((): RoomConnectOptions => {
     return {
       autoSubscribe: true,
     };
   }, []);
 
-  // Function to handle start/stop recording
-  const handleRecordingToggle = async () => {
-    const roomId = roomName; // Or any identifier for the room
-    const token = "your_token"; // Provide the valid token for the room
-
+  const startRecording = useCallback(async () => {
     if (!isRecording) {
-      // Start recording
       try {
-        const response = await fetch(`http://localhost:7880/rooms/${roomId}/start_recording`, {
+        const response = await fetch(`http://localhost:7880/rooms/${roomName}/start_recording`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            url: 'http://localhost:8080/recording', // Adjust URL for your recording service
-            format: 'mp4', // or another format you prefer
-          }),
+          body: JSON.stringify({ url: 'http://localhost:8080/recording', format: 'mp4' }),
         });
 
-        if (response.ok) {
-          setIsRecording(true);
-          alert('Recording started');
-        } else {
-          alert('Failed to start recording');
-        }
+        if (response.ok) setIsRecording(true);
       } catch (error) {
         console.error("Error starting recording", error);
-        alert('Error starting recording');
       }
-    } else {
-      // Stop recording
+    }
+  }, [roomName, token, isRecording]);
+
+  const stopAndSaveRecording = useCallback(async () => {
+    if (isRecording) {
       try {
-        const response = await fetch(`http://localhost:7880/rooms/${roomId}/stop_recording`, {
+        const stopResponse = await fetch(`http://localhost:7880/rooms/${roomName}/stop_recording`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -217,18 +205,36 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           },
         });
 
-        if (response.ok) {
+        if (stopResponse.ok) {
           setIsRecording(false);
-          alert('Recording stopped');
-        } else {
-          alert('Failed to stop recording');
+          const recordingBlob = await stopResponse.blob(); // Assume the API returns recording data as Blob
+
+          // Send recording to external endpoint
+          const formData = new FormData();
+          formData.append("recording", recordingBlob, `${roomName}.mp4`);
+
+          await fetch('https://recruitangle.com/api/expert/save/recording', {
+            method: 'POST',
+            body: formData,
+          });
         }
       } catch (error) {
-        console.error("Error stopping recording", error);
-        alert('Error stopping recording');
+        console.error("Error stopping/saving recording", error);
       }
     }
-  };
+  }, [roomName, token, isRecording]);
+
+  useEffect(() => {
+    // Start recording once the room connects
+    if (liveKitUrl) {
+      startRecording();
+    }
+
+    return () => {
+      // Stop and save recording on disconnect
+      stopAndSaveRecording();
+    };
+  }, [liveKitUrl, startRecording, stopAndSaveRecording]);
 
   return (
     <>
@@ -240,7 +246,10 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           connectOptions={connectOptions}
           video={userChoices.videoEnabled}
           audio={userChoices.audioEnabled}
-          onDisconnected={onLeave}
+          onDisconnected={() => {
+            stopAndSaveRecording();
+            onLeave?.();
+          }}
         >
           <VideoConference
             chatMessageFormatter={formatChatMessageLinks}
@@ -248,18 +257,6 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
               process.env.NEXT_PUBLIC_SHOW_SETTINGS_MENU === 'true' ? SettingsMenu : undefined
             }
           />
-          <button
-            onClick={handleRecordingToggle}
-            style={{
-              backgroundColor: isRecording ? '#FF0000' : '#006400', // Green for stop, Red for start
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: '5px',
-              marginTop: '20px',
-            }}
-          >
-            {isRecording ? 'Stop Recording' : 'Start Recording'}
-          </button>
           <DebugMode />
         </LiveKitRoom>
       )}
