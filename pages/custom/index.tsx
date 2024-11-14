@@ -10,13 +10,14 @@ import {
   VideoPresets,
 } from 'livekit-client';
 import { useRouter } from 'next/router';
-import { useMemo } from 'react';
+import { useMemo, useState} from 'react';
 import { decodePassphrase } from '../../lib/client-utils';
 import { DebugMode } from '../../lib/Debug';
 
 export default function CustomRoomConnection() {
   const router = useRouter();
   const { liveKitUrl, token, codec } = router.query;
+   const [isRecording, setIsRecording] = useState(false);
 
   const e2eePassphrase =
     typeof window !== 'undefined' && decodePassphrase(window.location.hash.substring(1));
@@ -56,6 +57,20 @@ export default function CustomRoomConnection() {
     };
   }, []);
 
+  const startRecording = () => {
+    // Logic to start recording
+    // This might involve calling an API or triggering a recording function in the LiveKit server
+    console.log('Recording started');
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    // Logic to stop recording
+    // This would usually involve sending a request to stop recording on the server side
+    console.log('Recording stopped');
+    setIsRecording(false);
+  };
+  
   if (typeof liveKitUrl !== 'string') {
     return <h2>Missing LiveKit URL</h2>;
   }
@@ -74,10 +89,16 @@ export default function CustomRoomConnection() {
           audio={true}
           video={true}
         >
-          <VideoConference chatMessageFormatter={formatChatMessageLinks} />
-          <DebugMode logLevel={LogLevel.debug} />
+          <VideoConference />
         </LiveKitRoom>
       )}
+
+      {/* Recording Control Button */}
+      <div>
+        <button onClick={isRecording ? stopRecording : startRecording}>
+          {isRecording ? 'Stop Recording' : 'Start Recording'}
+        </button>
+      </div>
     </main>
   );
 }
