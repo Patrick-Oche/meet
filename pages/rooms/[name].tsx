@@ -102,7 +102,11 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       },
     };
   }, [userChoices.username]);
-  const token = useToken(process.env.NEXT_PUBLIC_LK_TOKEN_ENDPOINT, roomName, tokenOptions);
+
+  const tokenEndpoint = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tIjoidGVzdC1yb29tIiwiaWRlbnRpdHkiOiJ0ZXN0LXVzZXIiLCJwZXJtaXNzaW9ucyI6WyJyb29tLmpvaW4iLCJyb29tLmxpc3RQYXJ0aWNpcGFudHMiLCJyb29tLnB1Ymxpc2giLCJyb29tLnN1YnNjcmliZSJdfX0.18UeRznS1TpI3W7NoL-wZcC2ex4-HofMCN4uTK9MFQY";
+  
+  const token = useToken(tokenEndpoint, roomName, tokenOptions);
+
 
   const router = useRouter();
   const { region, hq, codec } = router.query;
@@ -174,42 +178,29 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       autoSubscribe: true,
     };
   }, []);
-
-  const startRecording = useCallback(async () => {
-    if (!isRecording) {
-      try {
-        const response = await fetch(`http://localhost:7880/rooms/${roomName}/start_recording`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ url: 'http://localhost:8080/recording', format: 'mp4' }),
-        });
-
-        if (response.ok) setIsRecording(true);
-      } catch (error) {
-        console.error("Error starting recording", error);
+  
+    // Start recording
+    const startRecording = useCallback(() => {
+      if (!isRecording) {
+        try {
+          // Trigger LiveKit's internal recording start
+          room.startRecording({ format: 'mp4' });
+          setIsRecording(true);
+        } catch (error) {
+          console.error("Error starting recording", error);
+        }
       }
-    }
-  }, [roomName, token, isRecording]);
+    }, [isRecording]);
 
-  const stopAndSaveRecording = useCallback(async () => {
-    if (isRecording) {
-      try {
-        const stopResponse = await fetch(`http://localhost:7880/rooms/${roomName}/stop_recording`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (stopResponse.ok) {
+    // Stop recording and send to endpoint
+    const stopAndSaveRecording = useCallback(async () => {
+      if (isRecording) {
+        try {
+          // Finalize recording and get blob data
+          const recordingBlob = await room.stopRecording();
           setIsRecording(false);
-          const recordingBlob = await stopResponse.blob(); // Assume the API returns recording data as Blob
 
-          // Send recording to external endpoint
+          // Send recording blob to your endpoint
           const formData = new FormData();
           formData.append("recording", recordingBlob, `${roomName}.mp4`);
 
@@ -217,24 +208,23 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
             method: 'POST',
             body: formData,
           });
+        } catch (error) {
+          console.error("Error stopping/saving recording", error);
         }
-      } catch (error) {
-        console.error("Error stopping/saving recording", error);
       }
-    }
-  }, [roomName, token, isRecording]);
+    }, [isRecording, roomName]);
 
-  useEffect(() => {
-    // Start recording once the room connects
-    if (liveKitUrl) {
-      startRecording();
-    }
+    useEffect(() => {
+      // Start recording once connected to room
+      if (roomName && token) {
+        startRecording();
+      }
 
-    return () => {
-      // Stop and save recording on disconnect
-      stopAndSaveRecording();
-    };
-  }, [liveKitUrl, startRecording, stopAndSaveRecording]);
+      // Cleanup on disconnect
+      return () => {
+        stopAndSaveRecording();
+      };
+    }, [roomName, token, startRecording, stopAndSaveRecording]);
 
   return (
     <>
