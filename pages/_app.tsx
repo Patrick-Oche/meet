@@ -8,10 +8,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <DefaultSeo
-        title="Hub Meeting | AngleQuest"
+        title="Meetings | AngleQuest"
         titleTemplate="%s"
-        defaultTitle="Hub Meeting | AngleQuest"
-        description="Hub Meeting | AngleQuest"
+        defaultTitle="Meetings | AngleQuest"
+        description="Meetings | AngleQuest"
         twitter={{
           handle: '@livekitted',
           site: '@livekitted',
