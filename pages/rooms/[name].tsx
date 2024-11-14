@@ -253,6 +253,13 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           <DebugMode />
         </LiveKitRoom>
       )}
+
+      {/* Manual Button for Recording Control */}
+      <div>
+        <button onClick={isRecording ? stopAndSaveRecording : startRecording}>
+          {isRecording ? 'Stop Recording' : 'Start Recording'}
+        </button>
+      </div>
     </>
   );
 };
