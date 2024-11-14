@@ -11,12 +11,47 @@ import {
 } from 'livekit-client';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { decodePassphrase } from '../../lib/client-utils';
 import { DebugMode } from '../../lib/Debug';
 
 export default function CustomRoomConnection() {
   const router = useRouter();
   const { liveKitUrl, token, codec } = router.query;
+  // Define state and functions for recording
+  const [isRecording, setIsRecording] = useState(false);
+
+  const startRecording = useCallback(async () => {
+    if (!isRecording) {
+      try {
+        console.log("Recording started...");
+        setIsRecording(true);
+        // Add SDK logic to start recording
+      } catch (error) {
+        console.error("Error starting recording", error);
+      }
+    }
+  }, [isRecording]);
+
+  const stopAndSaveRecording = useCallback(async () => {
+    if (isRecording) {
+      try {
+        console.log("Recording stopped...");
+        setIsRecording(false);
+        // Add SDK logic to stop and save recording
+      } catch (error) {
+        console.error("Error stopping and saving recording", error);
+      }
+    }
+  }, [isRecording]);
+
+  useEffect(() => {
+    startRecording();
+
+    return () => {
+      stopAndSaveRecording();
+    };
+  }, [startRecording, stopAndSaveRecording]);
 
   const e2eePassphrase =
     typeof window !== 'undefined' && decodePassphrase(window.location.hash.substring(1));
@@ -77,6 +112,20 @@ export default function CustomRoomConnection() {
         >
           <VideoConference chatMessageFormatter={formatChatMessageLinks} />
           <DebugMode logLevel={LogLevel.debug} />
+
+          {/* Recording Button Overlay in Toolbar */}
+          <div style={{
+            position: 'absolute',
+            bottom: '10px',
+            right: '20px',
+            zIndex: 10,
+            display: 'flex',
+            gap: '10px',
+          }}>
+            <button onClick={isRecording ? stopAndSaveRecording : startRecording}>
+              {isRecording ? 'Stop Recording' : 'Start Recording'}
+            </button>
+          </div>
         </LiveKitRoom>
       )}
     </main>

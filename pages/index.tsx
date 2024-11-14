@@ -1,6 +1,6 @@
 import type { GetServerSideProps, InferGetServerSidePropsType } from 'next';
 import { useRouter } from 'next/router';
-import React, { ReactElement, useState, useEffect } from 'react';
+import React, { ReactElement, useState } from 'react';
 import { encodePassphrase, generateRoomId, randomString } from '../lib/client-utils';
 import styles from '../styles/Home.module.css';
 
@@ -41,69 +41,15 @@ function DemoMeetingTab({ label }: { label: string }) {
   const router = useRouter();
   const [e2ee, setE2ee] = useState(false);
   const [sharedPassphrase, setSharedPassphrase] = useState(randomString(64));
-  const [recording, setRecording] = useState<MediaRecorder | null>(null);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-
-  useEffect(() => {
-    // Clean up recording when the component unmounts
-    return () => {
-      if (recording) {
-        recording.stop();
-      }
-    };
-  }, [recording]);
-
   const startMeeting = () => {
     if (e2ee) {
       router.push(`/rooms/${generateRoomId()}#${encodePassphrase(sharedPassphrase)}`);
     } else {
       router.push(`/rooms/${generateRoomId()}`);
     }
-    startScreenRecording();
   };
 
-  const startScreenRecording = async () => {
-    try {
-      // Prompt user to select a screen, window, or tab
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          displaySurface: "browser"  // This hints the user to pick the browser tab
-        },
-        audio: true  // Include audio if LiveKit includes sound
-      });
 
-      const mediaRecorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        chunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const recordedBlob = new Blob(chunks, { type: 'video/webm' });
-
-        // Send the recording to the server
-        const formData = new FormData();
-        formData.append('file', recordedBlob, 'meeting-recording.webm');
-        await fetch('https://your-api-endpoint.com/upload-recording', {
-          method: 'POST',
-          body: formData,
-        });
-      };
-
-      mediaRecorder.start();
-      setRecording(mediaRecorder);
-
-      // Stop recording automatically after a certain period, e.g., 10 minutes
-      setTimeout(() => {
-        mediaRecorder.stop();
-      }, 600000); // 10 minutes
-    } catch (err) {
-      console.error('Error starting screen recording:', err);
-    }
-  };
-
-  
   return (
     <div className={styles.tabContent}>
       <p style={{ margin: 0 }}>Try LiveKit Meet for free with our live demo project.</p>
@@ -264,4 +210,4 @@ const Home = ({ tabIndex }: InferGetServerSidePropsType<typeof getServerSideProp
   );
 };
 
-export default Home;
+export default Home; 
