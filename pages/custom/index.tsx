@@ -59,43 +59,68 @@ export default function CustomRoomConnection() {
     };
   }, []);
 
-  // Define startRecording and stopRecording functions
-  const startRecording = useCallback(async () => {
-    if (!isRecording) {
-      try {
-        // SDK logic for starting the recording
-        console.log("Recording started...");
-        setIsRecording(true);
-      } catch (error) {
-        console.error("Error starting recording", error);
-      }
+  const startRecording = useCallback(() => {
+    if (room) {
+      // Ensure that recording is started when connected
+      console.log("Starting recording...");
+      // LiveKit SDK does not provide a direct method here, 
+      // so make sure the recording is initiated on the backend if necessary
+      setIsRecording(true);
     }
-  }, [isRecording]);
+  }, [room]);
 
   const stopAndSaveRecording = useCallback(async () => {
-    if (isRecording) {
+    if (isRecording && room) {
+      console.log("Stopping recording...");
+
       try {
-        // SDK logic for stopping and saving the recording
-        console.log("Recording stopped...");
-        setIsRecording(false);
+        // Stop recording (LiveKit may require an API call to stop recording on the server side)
+        const recordingData = {}; // This should be replaced with the actual recording data if available
+
+        // Call your API to save the recording data
+        const response = await fetch('https://recruitangle.com/api/expert/save/recording', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(recordingData),
+        });
+
+        if (response.ok) {
+          console.log("Recording saved successfully.");
+        } else {
+          console.error("Failed to save recording:", response.statusText);
+        }
       } catch (error) {
-        console.error("Error stopping and saving recording", error);
+        console.error("Error stopping and saving recording:", error);
       }
+
+      setIsRecording(false);
     }
-  }, [isRecording]);
+  }, [isRecording, room]);
 
   useEffect(() => {
-    // Start recording when the room is connected
-    room.on('connected', startRecording);
+    // When the room is connected, start recording
+    if (room) {
+      room.on('connected', startRecording);
 
-    // Stop and save recording when the room disconnects
-    room.on('disconnected', stopAndSaveRecording);
+      return () => {
+        room.off('connected', startRecording); // Cleanup listener
+      };
+    }
+  }, [room, startRecording]);
 
-    return () => {
-      room.off('connected', startRecording);
-      room.off('disconnected', stopAndSaveRecording);
-    };
-  }, [room, startRecording, stopAndSaveRecording]);
+  useEffect(() => {
+    // Stop recording when the room disconnects
+    if (room) {
+      room.on('disconnected', stopAndSaveRecording);
+
+      return () => {
+        room.off('disconnected', stopAndSaveRecording); // Cleanup listener
+      };
+    }
+  }, [room, stopAndSaveRecording]);
+
 
   // Check for required parameters
   if (typeof liveKitUrl !== 'string') {
