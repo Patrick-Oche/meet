@@ -93,6 +93,7 @@ type ActiveRoomProps = {
 const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
 
   const [isRecording, setIsRecording] = useState(false);
+  const [meetingStart, setMeetingStart] = useState(false);
 
   const tokenOptions = React.useMemo(() => {
     return {
@@ -102,11 +103,7 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       },
     };
   }, [userChoices.username]);
-
-  const tokenEndpoint = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aWRlbyI6eyJyb29tIjoidGVzdC1yb29tIiwiaWRlbnRpdHkiOiJ0ZXN0LXVzZXIiLCJwZXJtaXNzaW9ucyI6WyJyb29tLmpvaW4iLCJyb29tLmxpc3RQYXJ0aWNpcGFudHMiLCJyb29tLnB1Ymxpc2giLCJyb29tLnN1YnNjcmliZSJdfX0.18UeRznS1TpI3W7NoL-wZcC2ex4-HofMCN4uTK9MFQY";
-  
-  const token = useToken(tokenEndpoint, roomName, tokenOptions);
-
+  const token = useToken(process.env.NEXT_PUBLIC_LK_TOKEN_ENDPOINT, roomName, tokenOptions);
 
   const router = useRouter();
   const { region, hq, codec } = router.query;
@@ -178,53 +175,59 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
       autoSubscribe: true,
     };
   }, []);
-  
-    // Start recording
-    const startRecording = useCallback(() => {
-      if (!isRecording) {
-        try {
-          // Trigger LiveKit's internal recording start
-          room.startRecording({ format: 'mp4' });
-          setIsRecording(true);
-        } catch (error) {
-          console.error("Error starting recording", error);
+
+  const startRecording = useCallback(async () => {
+    if (!isRecording) {
+      try {
+        console.log("Recording started...");
+        setIsRecording(true);
+        // Add your logic to start the recording here (API or LiveKit integration)
+      } catch (error) {
+        console.error("Error starting recording", error);
+      }
+    }
+  }, [isRecording]);
+
+  const stopAndSaveRecording = useCallback(async () => {
+    if (isRecording) {
+      try {
+        console.log("Recording stopped...");
+        // Simulating recording data
+        const recordingBlob = new Blob(["This is a dummy recording"], { type: "video/mp4" });
+
+        // Send the recording to the server
+        const formData = new FormData();
+        formData.append("recording", recordingBlob, `meeting_${Date.now()}.mp4`);
+
+        const response = await fetch('https://recruitangle.com/api/expert/save/recording', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          console.log("Recording saved successfully");
+        } else {
+          console.error("Error saving recording");
         }
+
+        setIsRecording(false); // Reset the recording state
+      } catch (error) {
+        console.error("Error stopping and saving recording", error);
       }
-    }, [isRecording]);
+    }
+  }, [isRecording]);
 
-    // Stop recording and send to endpoint
-    const stopAndSaveRecording = useCallback(async () => {
-      if (isRecording) {
-        try {
-          // Finalize recording and get blob data
-          const recordingBlob = await room.stopRecording();
-          setIsRecording(false);
+  useEffect(() => {
+    if (liveKitUrl) {
+      // Automatically start the recording when the LiveKit room is connected
+      startRecording();
+    }
 
-          // Send recording blob to your endpoint
-          const formData = new FormData();
-          formData.append("recording", recordingBlob, `${roomName}.mp4`);
-
-          await fetch('https://recruitangle.com/api/expert/save/recording', {
-            method: 'POST',
-            body: formData,
-          });
-        } catch (error) {
-          console.error("Error stopping/saving recording", error);
-        }
-      }
-    }, [isRecording, roomName]);
-
-    useEffect(() => {
-      // Start recording once connected to room
-      if (roomName && token) {
-        startRecording();
-      }
-
-      // Cleanup on disconnect
-      return () => {
-        stopAndSaveRecording();
-      };
-    }, [roomName, token, startRecording, stopAndSaveRecording]);
+    return () => {
+      // Automatically stop and save the recording when the room is disconnected
+      stopAndSaveRecording();
+    };
+  }, [liveKitUrl, startRecording, stopAndSaveRecording]);
 
   return (
     <>
