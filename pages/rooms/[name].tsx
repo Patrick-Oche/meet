@@ -27,6 +27,8 @@ import { DebugMode } from '../../lib/Debug';
 import { decodePassphrase, useServerUrl } from '../../lib/client-utils';
 import { SettingsMenu } from '../../lib/SettingsMenu';
 
+import { ControlBar } from "@livekit/components-react";
+
 const Home: NextPage = () => {
   const router = useRouter();
   const { name: roomName } = router.query;
@@ -56,10 +58,10 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <Head>
-        <title>LiveKit Meet</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      {/* <Head> */}
+        {/* <title>LiveKit Meet</title> */}
+        {/* <link rel="icon" href="/favicon.ico" /> */}
+      {/* </Head> */}
 
       <main data-lk-theme="default">
         {roomName && !Array.isArray(roomName) && preJoinChoices ? (
@@ -176,58 +178,59 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
     };
   }, []);
 
-  const startRecording = useCallback(async () => {
-    if (!isRecording) {
-      try {
-        console.log("Recording started...");
-        setIsRecording(true);
-        // Add your logic to start the recording here (API or LiveKit integration)
-      } catch (error) {
-        console.error("Error starting recording", error);
-      }
-    }
-  }, [isRecording]);
+  // const startRecording = useCallback(async () => {
+  //   if (!isRecording) {
+  //     try {
+  //       console.log("Recording started...");
+  //       setIsRecording(true);
+  //       // Add your logic to start the recording here (API or LiveKit integration)
+  //     } catch (error) {
+  //       console.error("Error starting recording", error);
+  //     }
+  //   }
+  // }, [isRecording]);
 
-  const stopAndSaveRecording = useCallback(async () => {
-    if (isRecording) {
-      try {
-        console.log("Recording stopped...");
-        // Simulating recording data
-        const recordingBlob = new Blob(["This is a dummy recording"], { type: "video/mp4" });
+  // const stopAndSaveRecording = useCallback(async () => {
+  //   if (isRecording) {
+  //     try {
+  //       console.log("Recording stopped...");
+  //       // Simulating recording data
+  //       const recordingBlob = new Blob(["This is a dummy recording"], { type: "video/mp4" });
 
-        // Send the recording to the server
-        const formData = new FormData();
-        formData.append("recording", recordingBlob, `meeting_${Date.now()}.mp4`);
+  //       // Send the recording to the server
+  //       const formData = new FormData();
+  //       formData.append("recording", recordingBlob, `meeting_${Date.now()}.mp4`);
 
-        const response = await fetch('https://recruitangle.com/api/expert/save/recording', {
-          method: 'POST',
-          body: formData,
-        });
+  //       const response = await fetch('https://recruitangle.com/api/expert/save/recording', {
+  //         method: 'POST',
+  //         body: formData,
+  //       });
 
-        if (response.ok) {
-          console.log("Recording saved successfully");
-        } else {
-          console.error("Error saving recording");
-        }
+  //       if (response.ok) {
+  //         console.log("Recording saved successfully");
+  //       } else {
+  //         console.error("Error saving recording");
+  //       }
 
-        setIsRecording(false); // Reset the recording state
-      } catch (error) {
-        console.error("Error stopping and saving recording", error);
-      }
-    }
-  }, [isRecording]);
+  //       setIsRecording(false); // Reset the recording state
+  //     } catch (error) {
+  //       console.error("Error stopping and saving recording", error);
+  //     }
+  //   }
+  // }, [isRecording]);
 
   useEffect(() => {
     if (liveKitUrl) {
       // Automatically start the recording when the LiveKit room is connected
-      startRecording();
+      // startRecording();
     }
 
     return () => {
       // Automatically stop and save the recording when the room is disconnected
-      stopAndSaveRecording();
+      // stopAndSaveRecording();
     };
-  }, [liveKitUrl, startRecording, stopAndSaveRecording]);
+  // }, [liveKitUrl, startRecording, stopAndSaveRecording]);
+  }, [liveKitUrl]);
 
   return (
     <>
@@ -240,7 +243,7 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           video={userChoices.videoEnabled}
           audio={userChoices.audioEnabled}
           onDisconnected={() => {
-            stopAndSaveRecording();
+            // stopAndSaveRecording();
             onLeave?.();
           }}
         >
@@ -253,11 +256,12 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           <DebugMode />
 
           {/* Manual Button for Recording Control inside LiveKitRoom */}
-          <div>
-            <button onClick={isRecording ? stopAndSaveRecording : startRecording}>
+          <div style={{ position: 'absolute', zIndex: 999, bottom: '12px', right: '265px' }}>
+            <button className='lk-disconnect-button' onClick={() => setIsRecording(!isRecording)}>
               {isRecording ? 'Stop Recording' : 'Start Recording'}
             </button>
           </div>
+          
         </LiveKitRoom>
       )}
     </>
