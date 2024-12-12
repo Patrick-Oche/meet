@@ -71,7 +71,7 @@ export default function CustomRoomConnection() {
   const initRecording = () => {
     setRecorderLoading(true)
 
-    fetch('https://recruitangle.com/api/record-meeting', {
+    fetch('https://anglequest.work/api/expert/record-meeting', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -104,7 +104,7 @@ export default function CustomRoomConnection() {
   const stopRecording = () => {
     setRecorderLoading(true)
 
-    fetch('https://recruitangle.com/api/stop-recording', {
+    fetch('https://anglequest.work/api/expert/stop-recording', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
