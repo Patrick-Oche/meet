@@ -59,7 +59,7 @@ export default function CustomRoomConnection() {
   }, []);
 
   const initRecording = () => {
-    fetch('https://prod.recruitangle.com/api/record-meeting', {
+    fetch('https://anglequest.work/api/expert/record-meeting', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
