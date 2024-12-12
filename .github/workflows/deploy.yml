@@ -20,4 +20,5 @@ jobs:
             git pull --no-rebase
             pnpm install 
             pnpm run build
+            pkill -f 'next-server'
             pnpm start
