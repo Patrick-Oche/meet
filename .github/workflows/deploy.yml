@@ -1,24 +1,24 @@
-name: Deploy
+# name: Deploy
 
-on:
-  push:
-    branches: [ "main" ]
+# on:
+#   push:
+#     branches: [ "main" ]
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: 143.110.167.235
-          username: root
-          key: ${{secrets.SSH_PRIVATE_KEY}}
-          port: 22
-          script: |
-            cd /var/www/meet
-            git pull --no-rebase
-            pnpm install 
-            pnpm run build
-            pkill -f 'next-server'
-            pnpm start
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Deploy
+#         uses: appleboy/ssh-action@v1.0.3
+#         with:
+#           host: 143.110.167.235
+#           username: root
+#           key: ${{secrets.SSH_PRIVATE_KEY}}
+#           port: 22
+#           script: |
+#             cd /var/www/meet
+#             git pull --no-rebase
+#             pnpm install 
+#             pnpm run build
+#             pkill -f 'next-server'
+#             pnpm start
