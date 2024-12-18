@@ -111,7 +111,8 @@ export default function CustomRoomConnection() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        'egress_id': egressId
+        'egress_id': egressId,
+        token
       }),
     })
     .then(res => res.json())
