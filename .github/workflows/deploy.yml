@@ -13,12 +13,13 @@ jobs:
         with:
           host: 143.110.167.235
           username: root
-          key: ${{secrets.SSH_PRIVATE_KEY}}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
             cd /var/www/meet
             git pull --no-rebase
-            pnpm install 
+            rm -rf node_modules .next
+            pnpm install --force
             pnpm run build
-            pkill -f 'next-server'
+            pkill -f 'next-server' || true
             pnpm start
