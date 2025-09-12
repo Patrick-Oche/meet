@@ -8,7 +8,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 143.110.167.235
@@ -17,9 +17,15 @@ jobs:
           port: 22
           script: |
             cd /var/www/meet
-            git pull --no-rebase
-            rm -rf node_modules .next
-            pnpm install --force
+            echo "🔄 Pulling latest changes..."
+            git pull origin main
+
+            echo "📦 Installing dependencies..."
+            pnpm install --frozen-lockfile
+
+            echo "🏗️ Building project..."
             pnpm run build
-            pkill -f 'next-server' || true
-            pnpm start
+
+            echo "♻️ Restarting app with PM2..."
+            pm2 restart meet || pm2 start "pnpm start" --name meet
+            pm2 save
