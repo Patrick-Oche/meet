@@ -112,7 +112,7 @@ export default function CustomRoomConnection() {
          <div style={{ position: 'absolute', zIndex: 999, bottom: '12px', right: '265px' }}>
             <button className='lk-disconnect-button' onClick={initRecording}>
               {/* {isRecording ? 'Stop Recording' : 'Start Recording'} */}
-              {isRecording ? 'Stop Recording'}
+          {/* {isRecording ? 'Stop Recording'} */}
 
             </button>
           </div>
