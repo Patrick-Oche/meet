@@ -258,7 +258,9 @@ const ActiveRoom = ({ roomName, userChoices, onLeave }: ActiveRoomProps) => {
           {/* Manual Button for Recording Control inside LiveKitRoom */}
           <div style={{ position: 'absolute', zIndex: 999, bottom: '12px', right: '265px' }}>
             <button className='lk-disconnect-button' onClick={() => setIsRecording(!isRecording)}>
-              {isRecording ? 'Stop Recording' : 'Start Recording'}
+              {/* {isRecording ? 'Stop Recording' : 'Start Recording'} */}
+                {isRecording ? 'Stop Recording' } 
+
             </button>
           </div>
            
