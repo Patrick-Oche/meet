@@ -156,10 +156,10 @@ export default function CustomRoomConnection() {
 
           {/* Manual Button for Recording Control inside LiveKitRoom */}
           <div style={{ position: 'absolute', zIndex: 999, bottom: '12px', right: '330px' }}>
-            <button className='lk-disconnect-button' onClick={() => isRecording ? stopRecording() : initRecording()}>
+            {/* <button className='lk-disconnect-button' onClick={() => isRecording ? stopRecording() : initRecording()}>
               {recorderLoading ? '...' :
               isRecording ? 'Stop Recording' }
-            </button>
+            </button> */}
           </div>
         </LiveKitRoom>
       )}
